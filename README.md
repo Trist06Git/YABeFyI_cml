@@ -27,6 +27,6 @@ Flesh_Bag, Trist06@hotmail.com
 
 ## License
 
-This project is licenced under GNUv2 
+This project is licenced under GPLv2 
 
 
