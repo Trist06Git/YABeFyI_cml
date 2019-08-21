@@ -14,7 +14,7 @@ clean_all:
 dist: build
 	-rm -rf dist
 	mkdir dist
-	cp _build/default/main.exe dist/YABeFyI.exe
+	cp _build/default/main.exe dist/YABeFyI_cml.exe
 	cp test.b dist
 
 rebuild:
