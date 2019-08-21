@@ -8,39 +8,35 @@ type pr_res =
   | Ok of (int*int) list
 
 let proc_br str =
-  let stack = new Mon_stack.mon_stack in
-
-  let rec proc_br str n brs =
-    if n = String.length str then
-      Ok brs
-
+  let rec proc_br str n brs stack =
+    if n = String.length str then begin
+      if Stack.empty stack then 
+        Ok brs
+      else
+        Error
+    end
     else begin
       let c = String.get str n in
       if c = '[' then begin
-        stack#push n ;
-        proc_br str (n+1) brs
+        proc_br str (n+1) brs (Stack.push stack n)
       end
-
       else if c = ']' then begin
-        if stack#is_empty () then Error else begin
-          let top = match stack#pull () with Some x -> x | None -> -1 in
-          proc_br str (n+1) (brs @ [(top, n)])
-        end
+        let res = Stack.pull stack in
+        match res with
+          | (None, _) -> Error
+          | (Some top, stack) -> proc_br str (n+1) (brs @ [(top, n)]) stack
       end
-
-      else proc_br str (n+1) brs
+      else proc_br str (n+1) brs stack
     end
-  in 
-  let br_res = proc_br str 0 [] in
-  if stack#is_empty () then br_res else Error
+  in proc_br str 0 [] (Stack.make ())
 
 let rec get_oposite x lst this other =
   if lst = [] then
-      None
-    else if x = this (List.hd lst) then
-      Some (other (List.hd lst))
-    else
-      get_oposite x (List.tl lst) this other
+    None
+  else if x = this (List.hd lst) then
+    Some (other (List.hd lst))
+  else
+    get_oposite x (List.tl lst) this other
 
 let get_left r lst =
   get_oposite r lst snd fst
