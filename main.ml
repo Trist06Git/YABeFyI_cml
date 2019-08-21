@@ -3,54 +3,49 @@ Author  : Flesh_Bag, Trist06@hotmail.com
 licence : GPLv2
 *)
 
-let bf_machine = new Machine.machine in
+let create_mem n =
+  if n < 0 then [] else
+  let rec create_mem n lst =
+    match n with
+      | 0 -> lst
+      | _ -> create_mem (n-1) (0 :: lst)
+  in create_mem n []
+in
 
-let rec loop str brs n bf_machine =
+let rec loop str brs n left right =
   if n = String.length str then
-    Machine.Fin
+    Types.Fin
   else begin
     let c = (String.get str n) in
-    let res = (match c with
-      | '>' -> bf_machine#inc_pc 0
-      | '<' -> bf_machine#dec_pc 0
-      | '+' -> bf_machine#inc_reg 0
-      | '-' -> bf_machine#dec_reg 0
-      | '.' -> bf_machine#get 0
-      | ',' -> bf_machine#put (Char.code (input_char stdin)) (*Char.code (mon_in#get () )*)
-      | '[' -> (if bf_machine#reg_val = 0 then begin
+    match c with
+      | '>' -> (match right with
+                  | []     -> loop str brs (n+1) left right
+                  | h :: t -> loop str brs (n+1) (h :: left) t
+               )
+      | '<' -> (match left with
+                  | _ :: [] -> loop str brs (n+1) left right
+                  | h :: t  -> loop str brs (n+1) t (h :: right)
+                  | []      -> Types.Non
+               )
+      | '+' -> (loop str brs (n+1) (((List.hd left) + 1) :: List.tl left) right)
+      | '-' -> (loop str brs (n+1) (((List.hd left) - 1) :: List.tl left) right)
+      | '.' -> (print_char (Char.chr (List.hd left)) ; loop str brs (n+1) left right)
+      | ',' -> (match left with
+                  | []     -> Types.Fin
+                  | _ :: t -> (loop str brs (n+1) ((Char.code (input_char stdin)) :: t) right)
+               )
+      | '[' -> (if List.hd left = 0 then begin
                  match Br_check.get_right n brs with
-                   | Some x -> (loop str brs (x + 1) bf_machine)
-                   | _      -> Machine.Fin
+                   | Some x -> (loop str brs (x + 1) left right)
+                   | _      -> Types.Fin
                end
                else
-                 Machine.Loop bf_machine#reg_val)
+                 loop str brs (n+1) left right)
       | ']' -> (match Br_check.get_left n brs with
-                  | Some x -> (loop str brs x bf_machine)
-                  | _      -> Machine.Fin
+                  | Some x -> (loop str brs x left right)
+                  | _      -> Types.Fin
                )
-      |  _  -> Machine.Non
-    ) in
-
-    (*(*for debug*)
-    (match res with
-      | Machine.Output x -> Printf.printf "pos %i was output of %i : %c" n x (char_of_int x)
-      | Machine.Action x -> Printf.printf "pos %i was action of %i" n x
-      | Machine.Input  x -> Printf.printf "pos %i was action of %i" n x
-      | Machine.Loop   x -> Printf.printf "pos %i was loop   of %i" n x
-      | Machine.Fin -> Printf.printf "\ndone\n" ; exit 0
-      | Machine.Non -> Printf.printf "pos %i unknown char   " n
-      (*| _ -> ()*) ) ;
-    Printf.printf " : %c" c ;
-    Printf.printf "        ptr_loc : %i\n" bf_machine#pc_val ;
-    *)
-
-    (match res with
-      | Machine.Output x -> Printf.printf "%c" (char_of_int x)
-      | Machine.Fin -> exit 0
-      | _ -> () )
-    ;
-    
-    loop str brs (n+1) bf_machine
+      |  _  -> loop str brs (n+1) left right
   end
 in
 
@@ -63,7 +58,7 @@ let main _ =
 
     match all_br with
       | Br_check.Error -> Printf.printf "Error, bad brackets!\nnow exiting\n" ; exit 1
-      | Br_check.Ok x -> let all_br = x
+      | Br_check.Ok x  -> let all_br = x
     in
-    ignore (loop str_in all_br 0 bf_machine)
+    ignore (loop str_in all_br 0 [0] (create_mem 3000))
 in main 0
