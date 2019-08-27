@@ -1,5 +1,5 @@
 build: dune
-	dune build main.exe
+	dune build ./main.exe
 
 run:
 	dune exec ./main.exe test.b
